@@ -1,0 +1,696 @@
+﻿<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ارزیابی مدیر - امضا منحصر به فرد</title>
+
+  <!-- Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jalali-moment@3.3.10/dist/jalali-moment.browser.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/signature_pad/1.5.3/signature_pad.min.js"></script>
+  <link href="https://v1.fontapi.ir/css/Vazir:300,400,500,700" rel="stylesheet">
+
+  <style>
+    :root {
+      --primary: #10b981; --primary-dark: #059669; --accent: #0ea5e9;
+      --bg-light: #f0fdf4; --card-bg: #ffffff; --text: #1f2937; --border: #86efac; --hover: #ecfdf5;
+    }
+    body.dark-mode {
+      --primary: #34d399; --primary-dark: #10b981; --accent: #38bdf8;
+      --bg-light: #064e3b; --card-bg: #065f46; --text: #ecfdf5; --border: #34d399; --hover: #064e3b;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: linear-gradient(135deg, #6ee7b7, #5eead4);
+      min-height: 100vh; font-family: 'Vazir', sans-serif; color: var(--text);
+      transition: all 0.3s;
+    }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0.6rem; }
+    .card {
+      background: var(--card-bg); border-radius: 0.9rem; box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+      padding: 1rem; margin-bottom: 1rem; border: 1px solid var(--border);
+    }
+    .card:hover { transform: translateY(-1px); box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
+
+    .gradient-btn {
+      background: linear-gradient(90deg, var(--primary), var(--accent)); color: white;
+      padding: 0.45rem 1rem; border: none; border-radius: 1rem; font-weight: 600; font-size: 0.85rem;
+      cursor: pointer; transition: all 0.3s; box-shadow: 0 3px 10px rgba(16, 185, 129, 0.3);
+    }
+    .gradient-btn:hover {
+      background: linear-gradient(90deg, var(--primary-dark), var(--accent));
+      transform: translateY(-1px); box-shadow: 0 5px 14px rgba(16, 185, 129, 0.4);
+    }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+    th, td { border: 1px solid var(--border); padding: 0.35rem; text-align: center; vertical-align: middle; }
+    th { background: linear-gradient(90deg, #86efac, #99f6e4); color: #065f46; font-weight: 700; font-size: 0.8rem; }
+    .dark-mode th { background: linear-gradient(90deg, #34d399, #5eead4); color: #ecfdf5; }
+
+    input, textarea, select {
+      width: 100%; padding: 0.4rem; border: 1px solid var(--border); border-radius: 0.45rem;
+      background: var(--card-bg); color: var(--text); font-size: 0.8rem;
+    }
+    input:focus, textarea:focus, select:focus {
+      outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+    }
+    textarea { resize: vertical; min-height: 36px; }
+
+    .average { font-weight: bold; color: var(--primary-dark); font-size: 1rem; }
+    .dark-mode .average { color: #86efac; }
+
+    .header { text-align: center; color: white; font-size: 1.3rem; font-weight: 700; margin: 0.8rem 0; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+    .footer { text-align: center; color: white; font-weight: 600; margin: 1.2rem 0; opacity: 0.9; font-size: 0.85rem; }
+
+    /* امضا - دقیق */
+    .sig-container {
+      position: relative; width: 100%; height: 120px; border: 2px dashed var(--border);
+      border-radius: 0.6rem; background: var(--card-bg); overflow: hidden; touch-action: none;
+    }
+    .signature-pad {
+      width: 100%; height: 100%; cursor: crosshair;
+    }
+
+    .score-container {
+      display: flex; justify-content: center; gap: 4px; flex-wrap: nowrap;
+      overflow-x: auto; padding: 2px 0; scrollbar-width: thin;
+    }
+    .score-container input[type="radio"] { display: none; }
+    .score-container label {
+      min-width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+      background: #e5e7eb; color: #374151; border-radius: 50%; font-size: 0.72rem; font-weight: 600;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .score-container input[type="radio"]:checked + label {
+      background: var(--primary); color: white; transform: scale(1.1);
+    }
+
+    .analysis-card { background: linear-gradient(135deg, #ecfdf5, #d1fae5); padding: 0.8rem; border-radius: 0.8rem; margin-top: 0.5rem; font-size: 0.8rem; }
+    .dark-mode .analysis-card { background: linear-gradient(135deg, #065f46, #064e3b); color: #ecfdf5; }
+
+    /* پر کردن پیش‌فرض با توضیح */
+    .preset-btns {
+      display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem;
+    }
+    .preset-btns button {
+      background: #e0e7ff; color: #3730a3; padding: 0.4rem 0.8rem; border-radius: 0.8rem; font-size: 0.8rem; font-weight: 600;
+    }
+    .preset-btns button:hover { background: #c7d2fe; }
+
+    @media (max-width: 768px) {
+      .score-container label { min-width: 28px; height: 28px; font-size: 0.68rem; }
+      .card { padding: 0.8rem; }
+      th, td { font-size: 0.68rem; padding: 0.25rem; }
+      .grid-cols-3 { grid-template-columns: 1fr; }
+      .gradient-btn { font-size: 0.75rem; padding: 0.35rem 0.9rem; }
+    }
+
+    /* چاپ: جدول‌ها چسبیده به هم */
+    @media print {
+      body { background: white; color: black; margin: 0.3cm; }
+      .container { max-width: 100%; padding: 0; }
+      .card {
+        box-shadow: none; border: 1px solid #ccc; page-break-inside: avoid;
+        margin: 0; padding: 0.2cm; float: left; width: 49%; min-height: 0;
+      }
+      .card:nth-child(odd) { margin-right: 2%; }
+      .card:nth-child(even) { margin-left: 0; }
+      .card::after { content: ""; display: block; clear: both; }
+      .no-print, .gradient-btn, #toggleDarkMode, .sig-container::after, .preset-btns { display: none !important; }
+      .header { font-size: 1.1rem; margin: 0.1cm 0; color: #000; text-shadow: none; }
+      table { font-size: 6.2pt; }
+      th, td { padding: 0.08cm; }
+      .signature-pad { border: 1px solid #000; height: 50px; background: white; }
+      .average, .analysis-card { font-size: 6.8pt; }
+      .footer { font-size: 6.5pt; margin-top: 0.2cm; color: #000; }
+      @page { margin: 0.6cm; size: A4; }
+      .print-logo { display: block; margin: 0 auto 0.2cm; max-width: 60px; }
+    }
+  </style>
+</head>
+<body>
+  <img src="https://via.placeholder.com/100x100/10b981/ffffff?text=لوگو" class="print-logo" style="display:none;" alt="لوگو">
+
+  <div class="header">سامانه ارزیابی هوشمند مدیران – آموزش و پرورش ناحیه سه شیراز</div>
+
+  <div class="container">
+
+    <!-- Dark Mode & Search -->
+    <div class="card no-print">
+      <div class="flex justify-between items-center mb-2">
+        <button id="toggleDarkMode" class="gradient-btn">حالت تاریک</button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-2 mb-2">
+        <input id="search_form" type="text" placeholder="جستجو مدیر یا تاریخ">
+        <select id="load_form_select"><option value="">-- انتخاب فرم --</option></select>
+        <button onclick="loadForm()" class="gradient-btn">بارگذاری</button>
+      </div>
+
+      <div class="overflow-x-auto text-xs">
+        <table id="saved_forms_table">
+          <thead><tr><th>رتبه</th><th>نام مدیر</th><th>مدرسه</th><th>معدل</th><th>تاریخ</th><th>عملیات</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- تحلیل هوشمند -->
+    <div class="card no-print">
+      <h2 class="text-base font-bold text-center mb-2" style="color: var(--primary-dark);">تحلیل هوشمند عملکرد</h2>
+      <canvas id="scoreChart" height="260"></canvas>
+      <div id="smart_analysis" class="analysis-card mt-2"></div>
+    </div>
+
+    <!-- مشخصات عمومی -->
+    <div class="card">
+      <h2 class="text-base font-bold mb-2" style="color: var(--primary-dark);">مشخصات عمومی</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
+        <div><label>کد پرسنلی</label><input id="personnel_code" required></div>
+        <div><label>نام مدیر</label><input id="manager_name" required></div>
+        <div><label>جنسیت</label>
+          <select id="gender"><option value="مرد">مرد</option><option value="زن">زن</option></select>
+        </div>
+        <div><label>نام مدرسه</label><input id="school_name" required></div>
+        <div><label>دوره</label>
+          <select id="grade_level">
+            <option value="ابتدایی">ابتدایی</option>
+            <option value="متوسطه اول">متوسطه اول</option>
+            <option value="متوسطه دوم">متوسطه دوم</option>
+          </select>
+        </div>
+        <div><label>نوع</label>
+          <select id="school_type"><option value="دولتی">دولتی</option><option value="غیردولتی">غیردولتی</option></select>
+        </div>
+        <div><label>شیفت</label>
+          <select id="shift"><option value="صبح">صبح</option><option value="عصر">عصر</option><option value="دو شیفت">دو شیفت</option></select>
+        </div>
+        <div><label>تعداد دانش‌آموز</label><input id="student_count" type="number" min="1"></div>
+        <div><label>ناحیه</label><input id="region" value="ناحیه سه شیراز" readonly></div>
+        <div><label>تاریخ (میلادی)</label><input id="visit_date" type="date" required></div>
+        <div><label>تاریخ (شمسی)</label><input id="persian_date" readonly></div>
+        <div><label>ارزیاب</label><input id="evaluator_name" required></div>
+      </div>
+    </div>
+
+    <!-- پر کردن سریع با توضیح -->
+    <div class="card no-print">
+      <h2 class="text-base font-bold mb-2" style="color: var(--primary-dark);">پر کردن سریع (با توضیح)</h2>
+      <div class="preset-btns">
+        <button onclick="fillAll(2)">همه ضعیف (۲)</button>
+        <button onclick="fillAll(4)">همه متوسط رو به پایین (۴)</button>
+        <button onclick="fillAll(6)">همه متوسط (۶)</button>
+        <button onclick="fillAll(8)">همه خوب (۸)</button>
+        <button onclick="fillAll(10)">همه عالی (۱۰)</button>
+      </div>
+    </div>
+
+    <!-- ۶۹ معیار -->
+    <!-- محور ۱: رهبری -->
+    <div class="card">
+      <h2 class="text-base font-bold mb-2" style="color: var(--primary-dark);">محور ۱: رهبری</h2>
+      <table><tbody id="axis_lead"></tbody></table>
+      <p class="average mt-1 text-right">میانگین: <span id="avg_lead">0.0</span></p>
+    </div>
+
+    <!-- محور ۲: راهبری و مدیریت -->
+    <div class="card">
+      <h2 class="text-base font-bold mb-2" style="color: var(--primary-dark);">محور ۲: راهبری و مدیریت</h2>
+      <table><tbody id="axis_strat"></tbody></table>
+      <p class="average mt-1 text-right">میانگین: <span id="avg_strat">0.0</span></p>
+    </div>
+
+    <!-- محور ۳: آموزشی و تربیتی -->
+    <div class="card">
+      <h2 class="text-base font-bold mb-2" style="color: var(--primary-dark);">محور ۳: آموزشی و تربیتی</h2>
+      <table><tbody id="axis_edu"></tbody></table>
+      <p class="average mt-1 text-right">میانگین: <span id="avg_edu">0.0</span></p>
+    </div>
+
+    <!-- محور ۴: محیط تربیتی -->
+    <div class="card">
+      <h2 class="text-base font-bold mb-2" style="color: var(--primary-dark);">محور ۴: محیط تربیتی</h2>
+      <table><tbody id="axis_env"></tbody></table>
+      <p class="average mt-1 text-right">میانگین: <span id="avg_env">0.0</span></p>
+    </div>
+
+    <!-- محور ۵: اجتماعی-ارتباطی -->
+    <div class="card">
+      <h2 class="text-base font-bold mb-2" style="color: var(--primary-dark);">محور ۵: اجتماعی-ارتباطی</h2>
+      <table><tbody id="axis_soc"></tbody></table>
+      <p class="average mt-1 text-right">میانگین: <span id="avg_soc">0.0</span></p>
+    </div>
+
+    <!-- محور ۶: عملکردی -->
+    <div class="card">
+      <h2 class="text-base font-bold mb-2" style="color: var(--primary-dark);">محور ۶: عملکردی</h2>
+      <table><tbody id="axis_perf"></tbody></table>
+      <p class="average mt-1 text-right">میانگین: <span id="avg_perf">0.0</span></p>
+    </div>
+
+    <!-- جمع‌بندی -->
+    <div class="card">
+      <h2 class="text-base font-bold mb-2" style="color: var(--primary-dark);">جمع‌بندی و امضا</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
+        <div><label>نکات قوت</label><textarea id="strengths" rows="2"></textarea></div>
+        <div><label>نکات قابل بهبود</label><textarea id="improvements" rows="2"></textarea></div>
+      </div>
+      <div><label>جمع‌بندی نهایی</label><textarea id="final_summary" rows="3"></textarea></div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+        <div>
+          <label>امضای ارزیاب</label>
+          <div class="sig-container"><canvas id="evaluator_sig" class="signature-pad"></canvas></div>
+          <button onclick="clearSig('evaluator_sig')" class="gradient-btn mt-1 text-xs">پاک کردن</button>
+        </div>
+        <div>
+          <label>امضای مدیر</label>
+          <div class="sig-container"><canvas id="manager_sig" class="signature-pad"></canvas></div>
+          <button onclick="clearSig('manager_sig')" class="gradient-btn mt-1 text-xs">پاک کردن</button>
+        </div>
+      </div>
+    </div>
+
+    <p class="average text-center text-lg mt-3">معدل کل: <span id="overall_avg">0.0</span> / ۱۰</p>
+
+    <!-- دکمه‌ها -->
+    <div class="flex flex-wrap justify-center gap-2 mt-4 no-print">
+      <button onclick="saveForm()" class="gradient-btn">ذخیره</button>
+      <button onclick="printForm()" class="gradient-btn">چاپ</button>
+      <button onclick="exportToExcel()" class="gradient-btn">اکسل</button>
+      <button onclick="exportJSON()" class="gradient-btn">JSON</button>
+      <button onclick="importJSON()" class="gradient-btn">وارد JSON</button>
+      <button onclick="clearForm()" class="gradient-btn">پاک</button>
+      <button onclick="clearAllData()" class="gradient-btn">همه پاک</button>
+    </div>
+  </div>
+
+  <div class="footer">سامانه ارزیابی هوشمند – ناحیه سه شیراز © سازنده حسین هادی پور 🔨</div>
+
+  <input type="file" id="jsonInput" accept=".json" style="display:none;">
+
+  <script>
+    const STORAGE_KEY = 'manager_eval_1404_v6';
+    let evaluatorPad, managerPad, chart;
+
+    const items = [
+      "تصمیم‌گیری", "انگیزه‌بخشی", "مدیریت تیم",
+      "تدوین برنامه راهبردی مدرسه", "مدیریت بهینه و شفاف مالی", "مشارکت دیگران در تصمیم گیری و تصمیم سازی", "میزان انطباق تصمیم های مهم مدرسه با روش های علمی و آیین نامه ها",
+      "مدیریت منابع انسانی ،رشد و توانمند سازی(اجرای موفق طرح توانا)", "مدیریت بهینه و شفاف مالی", "مشارکت دیگران در تصمیم گیری و تصمیم سازی", "میزان انطباق تصمیم های مهم مدرسه با روش های علمی و آیین نامه ها",
+      "تدوین برنامه راهبردی مدرسه", "مدیریت بهینه و شفاف مالی", "مشارکت دیگران در تصمیم گیری و تصمیم سازی", "میزان انطباق تصمیم های مهم مدرسه با روش های علمی و آیین نامه ها",
+      "مدیریت منابع انسانی ،رشد و توانمند سازی(اجرای موفق طرح توانا)", "مدیریت منابع انسانی ،رشد و توانمند سازی(اجرای موفق طرح توانا)",
+      "تنوع بخشی به محیط های مثبت یادگیری", "بهبود فعالیت های فرهنگی-تربیتی،بهداشت و سلامت و تندرستی", "حمایت آموزشی مستمر یادگیرندگان (حامی)", "طراحی و اجرای برنامه ویژه مدرسه(بوم)",
+      "تنوع بخشی به محیط های مثبت یادگیری", "بهبود فعالیت های فرهنگی-تربیتی،بهداشت و سلامت و تندرستی", "حمایت آموزشی مستمر یادگیرندگان (حامی)", "طراحی و اجرای برنامه ویژه مدرسه(بوم)",
+      "تنوع بخشی به محیط های مثبت یادگیری", "بهبود فعالیت های فرهنگی-تربیتی،بهداشت و سلامت و تندرستی", "حمایت آموزشی مستمر یادگیرندگان (حامی)", "طراحی و اجرای برنامه ویژه مدرسه(بوم)",
+      "تنوع در تجهیزات و فضای آموزشی ،شاداب سازی", "توسعه محیط فن آورانه", "احساس ارزشمندی و تعلق در دانش آموزان", "القاء هویت ایرانی- اسلامی در مدرسه",
+      "تنوع در تجهیزات و فضای آموزشی ،شاداب سازی", "توسعه محیط فن آورانه", "احساس ارزشمندی و تعلق در دانش آموزان", "القاء هویت ایرانی- اسلامی در مدرسه",
+      "تنوع در تجهیزات و فضای آموزشی ،شاداب سازی", "توسعه محیط فن آورانه", "احساس ارزشمندی و تعلق در دانش آموزان", "القاء هویت ایرانی- اسلامی در مدرسه",
+      "توسعه مشارکت و زمینه های مسولیت پذیری", "هم آوایی جریان تربیت خانواده و مدرسه", "تعاملات حرفه ای با همکاران و ارکان مدرسه", "تعامل مدرسه و جامعه محلی",
+      "توسعه مشارکت و زمینه های مسولیت پذیری", "هم آوایی جریان تربیت خانواده و مدرسه", "تعاملات حرفه ای با همکاران و ارکان مدرسه", "تعامل مدرسه و جامعه محلی",
+      "توسعه مشارکت و زمینه های مسولیت پذیری", "هم آوایی جریان تربیت خانواده و مدرسه", "تعاملات حرفه ای با همکاران و ارکان مدرسه", "تعامل مدرسه و جامعه محلی",
+      "تحقق شایستگی متربیان", "توسعه شایستگی معلمان و همکاران", "بهبود شایستگی های تربیتی والدین", "ارتقاءجایگاه مدرسه به عنوان کانون تربیتی محله", "ارتقاء مدیریت و راهبری اثربخش و راهبردی",
+      "تحقق شایستگی متربیان", "توسعه شایستگی معلمان و همکاران", "بهبود شایستگی های تربیتی والدین", "ارتقاءجایگاه مدرسه به عنوان کانون تربیتی محله", "ارتقاء مدیریت و راهبری اثربخش و راهبردی",
+      "تحقق شایستگی متربیان", "توسعه شایستگی معلمان و همکاران", "بهبود شایستگی های تربیتی والدین", "ارتقاءجایگاه مدرسه به عنوان کانون تربیتی محله", "ارتقاء مدیریت و راهبری اثربخش و راهبردی",
+      "مدیریت منابع انسانی ،رشد و توانمند سازی(اجرای موفق طرح توانا)"
+    ];
+
+    const axes = {
+      lead: { name: "رهبری", items: [], ids: [] },
+      strat: { name: "راهبری و مدیریت", items: [], ids: [] },
+      edu: { name: "آموزشی و تربیتی", items: [], ids: [] },
+      env: { name: "محیط تربیتی", items: [], ids: [] },
+      soc: { name: "اجتماعی-ارتباطی", items: [], ids: [] },
+      perf: { name: "عملکردی", items: [], ids: [] }
+    };
+
+    const presetTexts = {
+      2: "نیاز به بازنگری اساسی و آموزش مجدد",
+      4: "عملکرد ضعیف، نیاز به برنامه بهبود فوری",
+      6: "متوسط، قابل قبول اما نیاز به تقویت",
+      8: "خوب، با پتانسیل رشد بیشتر",
+      10: "عالی، الگوی موفق و قابل الگوبرداری"
+    };
+
+    window.onload = () => {
+      document.getElementById('visit_date').addEventListener('change', updatePersianDate);
+
+      const evaluatorCanvas = document.getElementById('evaluator_sig');
+      const managerCanvas = document.getElementById('manager_sig');
+      evaluatorPad = new SignaturePad(evaluatorCanvas, { penColor: 'black' });
+      managerPad = new SignaturePad(managerCanvas, { penColor: 'black' });
+
+      setupSignaturePad(evaluatorCanvas, evaluatorPad);
+      setupSignaturePad(managerCanvas, managerPad);
+
+      generateItems();
+      loadSavedForms();
+      calculateAll();
+      updateChart();
+      updateSmartAnalysis();
+
+      document.querySelectorAll('input, textarea, select').forEach(el => {
+        el.addEventListener('input', () => { autoSave(); calculateAll(); updateChart(); updateSmartAnalysis(); });
+      });
+
+      document.getElementById('toggleDarkMode').onclick = () => {
+        document.body.classList.toggle('dark-mode');
+      };
+    };
+
+    function setupSignaturePad(canvas, pad) {
+      const container = canvas.parentElement;
+      const resize = () => {
+        const ratio = Math.max(window.devicePixelRatio || 1, 1);
+        canvas.width = container.offsetWidth * ratio;
+        canvas.height = container.offsetHeight * ratio;
+        canvas.getContext('2d').scale(ratio, ratio);
+        pad.clear();
+      };
+      resize();
+      new ResizeObserver(resize).observe(container);
+    }
+
+    function updatePersianDate() {
+      const d = document.getElementById('visit_date').value;
+      if (d) document.getElementById('persian_date').value = moment(d).locale('fa').format('YYYY/MM/DD');
+    }
+
+    function generateItems() {
+      items.forEach((title, idx) => {
+        let axisKey = 'lead';
+        if (title.includes('راهبری') || title.includes('مدیریت منابع') || title.includes('تدوین')) axisKey = 'strat';
+        else if (title.includes('آموزشی') || title.includes('حامی') || title.includes('بوم')) axisKey = 'edu';
+        else if (title.includes('محیط') || title.includes('تجهیزات') || title.includes('فن آورانه')) axisKey = 'env';
+        else if (title.includes('اجتماعی') || title.includes('مشارکت') || title.includes('خانواده')) axisKey = 'soc';
+        else if (title.includes('عملکردی') || title.includes('شایستگی') || title.includes('ارتقاء')) axisKey = 'perf';
+
+        const id = `item_${idx+1}`;
+        axes[axisKey].items.push(title);
+        axes[axisKey].ids.push(id);
+
+        const row = `<tr>
+          <td>${title}</td>
+          <td><textarea rows="1" id="desc_${id}"></textarea></td>
+          <td colspan="5" class="score-container">
+            <input type="radio" name="${id}" value="2" id="${id}_2"><label for="${id}_2">2</label>
+            <input type="radio" name="${id}" value="4" id="${id}_4"><label for="${id}_4">4</label>
+            <input type="radio" name="${id}" value="6" id="${id}_6"><label for="${id}_6">6</label>
+            <input type="radio" name="${id}" value="8" id="${id}_8"><label for="${id}_8">8</label>
+            <input type="radio" name="${id}" value="10" id="${id}_10"><label for="${id}_10">10</label>
+          </td>
+        </tr>`;
+        document.getElementById(`axis_${axisKey}`).innerHTML += row;
+      });
+    }
+
+    function fillAll(score) {
+      const text = presetTexts[score];
+      document.querySelectorAll('tr').forEach(tr => {
+        const radio = tr.querySelector(`input[value="${score}"]`);
+        const textarea = tr.querySelector('textarea');
+        if (radio && textarea) {
+          radio.checked = true;
+          textarea.value = text;
+        }
+      });
+      calculateAll();
+      updateChart();
+      updateSmartAnalysis();
+      autoSave();
+    }
+
+    function clearScores() {
+      document.querySelectorAll('input[type="radio"]').forEach(r => r.checked = false);
+      document.querySelectorAll('textarea[id^="desc_"]').forEach(t => t.value = '');
+    }
+
+    function calculateAll() {
+      let total = 0, filled = 0;
+      Object.keys(axes).forEach(key => {
+        let sum = 0, cnt = 0;
+        axes[key].ids.forEach(id => {
+          const sel = document.querySelector(`input[name="${id}"]:checked`);
+          if (sel) { sum += parseInt(sel.value); cnt++; }
+        });
+        const avg = cnt ? (sum / cnt).toFixed(1) : '0.0';
+        document.getElementById(`avg_${key}`).textContent = avg;
+        total += sum; filled += cnt;
+      });
+      const overall = filled ? (total / filled).toFixed(1) : '0.0';
+      document.getElementById('overall_avg').textContent = overall;
+    }
+
+    function updateChart() {
+      const ctx = document.getElementById('scoreChart').getContext('2d');
+      if (chart) chart.destroy();
+      chart = new Chart(ctx, {
+        type: 'radar',
+        data: {
+          labels: Object.values(axes).map(a => a.name),
+          datasets: [{
+            label: 'امتیاز',
+            data: Object.keys(axes).map(k => parseFloat(document.getElementById(`avg_${k}`).textContent) || 0),
+            backgroundColor: 'rgba(16, 185, 129, 0.2)',
+            borderColor: '#10b981',
+            borderWidth: 2
+          }]
+        },
+        options: { scales: { r: { min: 0, max: 10, ticks: { stepSize: 2 } } }, plugins: { legend: { display: false } } }
+      });
+    }
+
+    function updateSmartAnalysis() {
+      const overall = parseFloat(document.getElementById('overall_avg').textContent);
+      let analysis = "";
+      if (overall >= 9.5) analysis = "عالی! عملکرد در سطح برتر";
+      else if (overall >= 8.5) analysis = "خیلی خوب! با کمی تلاش به عالی می‌رسد";
+      else if (overall >= 7.0) analysis = "خوب! نیاز به تقویت در برخی محورها";
+      else if (overall >= 5.0) analysis = "متوسط! نیاز به برنامه بهبود";
+      else analysis = "نیاز به بازنگری اساسی";
+
+      const weak = Object.keys(axes).filter(k => parseFloat(document.getElementById(`avg_${k}`).textContent) < 7);
+      if (weak.length > 0) {
+        analysis += `<br><strong>محورهای ضعیف:</strong> ${weak.map(k => axes[k].name).join(', ')}`;
+      }
+
+      document.getElementById('smart_analysis').innerHTML = analysis;
+    }
+
+    function autoSave() { setTimeout(saveForm, 800); }
+
+    function saveForm() {
+      const code = document.getElementById('personnel_code').value.trim();
+      const name = document.getElementById('manager_name').value.trim();
+      if (!code || !name) return;
+
+      const key = `${STORAGE_KEY}_${code}`;
+      const formData = { ...getFormData(), timestamp: new Date().toISOString() };
+      localStorage.setItem(key, JSON.stringify(formData));
+      loadSavedForms();
+    }
+
+    function getFormData() {
+      const data = {
+        personnel_code: document.getElementById('personnel_code').value,
+        manager_name: document.getElementById('manager_name').value,
+        gender: document.getElementById('gender').value,
+        school_name: document.getElementById('school_name').value,
+        grade_level: document.getElementById('grade_level').value,
+        school_type: document.getElementById('school_type').value,
+        shift: document.getElementById('shift').value,
+        student_count: document.getElementById('student_count').value,
+        region: document.getElementById('region').value,
+        visit_date: document.getElementById('visit_date').value,
+        persian_date: document.getElementById('persian_date').value,
+        evaluator_name: document.getElementById('evaluator_name').value,
+        strengths: document.getElementById('strengths').value,
+        improvements: document.getElementById('improvements').value,
+        final_summary: document.getElementById('final_summary').value,
+        evaluator_sig: evaluatorPad.toDataURL(),
+        manager_sig: managerPad.toDataURL(),
+        scores: {},
+        descriptions: {},
+        averages: {}
+      };
+
+      document.querySelectorAll('input[type="radio"]:checked').forEach(r => {
+        data.scores[r.name] = r.value;
+      });
+
+      document.querySelectorAll('textarea[id^="desc_"]').forEach(t => {
+        data.descriptions[t.id.replace('desc_', '')] = t.value;
+      });
+
+      Object.keys(axes).forEach(k => {
+        data.averages[k] = document.getElementById(`avg_${k}`).textContent;
+      });
+      data.overall = document.getElementById('overall_avg').textContent;
+
+      return data;
+    }
+
+    function loadSavedForms() {
+      const tbody = document.querySelector('#saved_forms_table tbody');
+      tbody.innerHTML = '';
+      const select = document.getElementById('load_form_select');
+      select.innerHTML = '<option value="">-- انتخاب فرم --</option>';
+
+      const entries = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith(STORAGE_KEY)) {
+          const data = JSON.parse(localStorage.getItem(key));
+          entries.push({ key, data });
+        }
+      }
+
+      entries.sort((a, b) => parseFloat(b.data.overall) - parseFloat(a.data.overall));
+
+      entries.forEach((entry, index) => {
+        const { key, data } = entry;
+        const rank = index + 1;
+        const row = `<tr>
+          <td><strong>${rank}</strong></td>
+          <td>${data.manager_name}</td>
+          <td>${data.school_name}</td>
+          <td><strong>${data.overall}</strong></td>
+          <td>${data.persian_date}</td>
+          <td>
+            <button onclick="loadFormByKey('${key}')" class="text-blue-600 text-xs">بارگذاری</button>
+            <button onclick="deleteForm('${key}')" class="text-red-600 text-xs">حذف</button>
+          </td>
+        </tr>`;
+        tbody.innerHTML += row;
+
+        const opt = document.createElement('option');
+        opt.value = key; opt.textContent = `${data.manager_name} - ${data.overall} - ${data.persian_date}`;
+        select.appendChild(opt);
+      });
+    }
+
+    function loadFormByKey(key) {
+      clearScores();
+      const data = JSON.parse(localStorage.getItem(key));
+      if (!data) return;
+
+      Object.keys(data).forEach(k => {
+        const el = document.getElementById(k);
+        if (el) el.value = data[k] || '';
+      });
+
+      if (data.evaluator_sig) evaluatorPad.fromDataURL(data.evaluator_sig);
+      if (data.manager_sig) managerPad.fromDataURL(data.manager_sig);
+
+      Object.keys(data.scores || {}).forEach(name => {
+        const radio = document.querySelector(`input[name="${name}"][value="${data.scores[name]}"]`);
+        if (radio) radio.checked = true;
+      });
+
+      Object.keys(data.descriptions || {}).forEach(id => {
+        const textarea = document.getElementById(`desc_${id}`);
+        if (textarea) textarea.value = data.descriptions[id];
+      });
+
+      calculateAll();
+      updateChart();
+      updateSmartAnalysis();
+    }
+
+    function deleteForm(key) {
+      if (confirm('حذف شود؟')) {
+        localStorage.removeItem(key);
+        loadSavedForms();
+      }
+    }
+
+    function printForm() { window.print(); }
+
+    function exportToExcel() {
+      const data = [["رتبه", "کد", "نام", "مدرسه", "معدل", ...items]];
+      const entries = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith(STORAGE_KEY)) {
+          const d = JSON.parse(localStorage.getItem(key));
+          entries.push(d);
+        }
+      }
+      entries.sort((a, b) => parseFloat(b.overall) - parseFloat(a.overall));
+      entries.forEach((d, i) => {
+        const row = [i+1, d.personnel_code, d.manager_name, d.school_name, d.overall];
+        items.forEach((_, j) => {
+          const id = `item_${j+1}`;
+          row.push(d.scores[id] || "");
+        });
+        data.push(row);
+      });
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet(data);
+      XLSX.utils.book_append_sheet(wb, ws, "رتبه‌بندی");
+      XLSX.writeFile(wb, "ارزیابی_کامل.xlsx");
+    }
+
+    function exportJSON() {
+      const data = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith(STORAGE_KEY)) {
+          data[key] = JSON.parse(localStorage.getItem(key));
+        }
+      }
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'backup_eval.json'; a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function importJSON() {
+      document.getElementById('jsonInput').click();
+      document.getElementById('jsonInput').onchange = e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = ev => {
+          try {
+            const obj = JSON.parse(ev.target.result);
+            Object.keys(obj).forEach(k => localStorage.setItem(k, JSON.stringify(obj[k])));
+            loadSavedForms();
+            alert('داده‌ها وارد شدند');
+          } catch { alert('فایل نامعتبر'); }
+        };
+        reader.readAsText(file);
+      };
+    }
+
+    function clearSig(id) {
+      id === 'evaluator_sig' ? evaluatorPad.clear() : managerPad.clear();
+    }
+
+    function clearForm() {
+      if (confirm('همه پاک شود؟')) {
+        document.querySelectorAll('input, textarea, select').forEach(el => el.value = '');
+        evaluatorPad.clear(); managerPad.clear();
+        clearScores();
+        calculateAll(); updateChart(); updateSmartAnalysis();
+      }
+    }
+
+    function clearAllData() {
+      if (confirm('همه پاک شوند؟')) {
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+          const key = localStorage.key(i);
+          if (key.startsWith(STORAGE_KEY)) localStorage.removeItem(key);
+        }
+        loadSavedForms();
+      }
+    }
+  </script>
+</body>
+</html>

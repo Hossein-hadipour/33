@@ -1,0 +1,764 @@
+﻿<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ارزیابی مدیر - ناحیه ۳ شیراز</title>
+
+  <!-- Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jalali-moment@3.3.10/dist/jalali-moment.browser.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/signature_pad/1.5.3/signature_pad.min.js"></script>
+  <link href="https://v1.fontapi.ir/css/Vazir:300,400,500,700" rel="stylesheet">
+
+  <style>
+    :root {
+      --primary: #10b981; --primary-dark: #059669; --accent: #0ea5e9;
+      --bg-light: #f0fdf4; --card-bg: #ffffff; --text: #1f2937; --border: #86efac; --hover: #ecfdf5;
+    }
+    body.dark-mode {
+      --primary: #34d399; --primary-dark: #10b981; --accent: #38bdf8;
+      --bg-light: #064e3b; --card-bg: #065f46; --text: #ecfdf5; --border: #34d399; --hover: #064e3b;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: linear-gradient(135deg, #6ee7b7, #5eead4);
+      min-height: 100vh; font-family: 'Vazir', sans-serif; color: var(--text);
+      transition: all 0.3s;
+    }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0.6rem; }
+    .card {
+      background: var(--card-bg); border-radius: 0.9rem; box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+      padding: 1rem; margin-bottom: 1rem; border: 1px solid var(--border);
+    }
+    .card:hover { transform: translateY(-1px); box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
+
+    .gradient-btn {
+      background: linear-gradient(90deg, var(--primary), var(--accent)); color: white;
+      padding: 0.45rem 1rem; border: none; border-radius: 1rem; font-weight: 600; font-size: 0.85rem;
+      cursor: pointer; transition: all 0.3s; box-shadow: 0 3px 10px rgba(16, 185, 129, 0.3);
+    }
+    .gradient-btn:hover {
+      background: linear-gradient(90deg, var(--primary-dark), var(--accent));
+      transform: translateY(-1px); box-shadow: 0 5px 14px rgba(16, 185, 129, 0.4);
+    }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+    th, td { border: 1px solid var(--border); padding: 0.35rem; text-align: center; vertical-align: middle; }
+    th { background: linear-gradient(90deg, #86efac, #99f6e4); color: #065f46; font-weight: 700; font-size: 0.8rem; }
+    .dark-mode th { background: linear-gradient(90deg, #34d399, #5eead4); color: #ecfdf5; }
+
+    input, textarea, select {
+      width: 100%; padding: 0.4rem; border: 1px solid var(--border); border-radius: 0.45rem;
+      background: var(--card-bg); color: var(--text); font-size: 0.8rem;
+    }
+    input:focus, textarea:focus, select:focus {
+      outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+    }
+    textarea { resize: vertical; min-height: 36px; }
+
+    .average { font-weight: bold; color: var(--primary-dark); font-size: 1rem; }
+    .dark-mode .average { color: #86efac; }
+
+    .header { text-align: center; color: white; font-size: 1.3rem; font-weight: 700; margin: 0.8rem 0; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+    .footer { text-align: center; color: white; font-weight: 600; margin: 1.2rem 0; opacity: 0.9; font-size: 0.85rem; }
+
+    .sig-container {
+      position: relative; width: 100%; height: 120px; border: 2px dashed var(--border);
+      border-radius: 0.6rem; background: var(--card-bg); overflow: hidden; touch-action: none;
+    }
+    .signature-pad { width: 100%; height: 100%; cursor: crosshair; }
+
+    .score-container {
+      display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; padding: 2px 0;
+    }
+    .score-container input[type="radio"] { display: none; }
+    .score-container label {
+      width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+      background: #e5e7eb; color: #374151; border-radius: 50%; font-size: 0.7rem; font-weight: 600;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .score-container input[type="radio"]:checked + label {
+      background: var(--primary); color: white; transform: scale(1.1);
+    }
+
+    .analysis-card { background: linear-gradient(135deg, #ecfdf5, #d1fae5); padding: 0.8rem; border-radius: 0.8rem; margin-top: 0.5rem; font-size: 0.8rem; }
+    .dark-mode .analysis-card { background: linear-gradient(135deg, #065f46, #064e3b); color: #ecfdf5; }
+
+    .preset-btns {
+      display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem;
+    }
+    .preset-btns button {
+      background: #e0e7ff; color: #3730a3; padding: 0.4rem 0.8rem; border-radius: 0.8rem; font-size: 0.8rem; font-weight: 600;
+    }
+    .preset-btns button:hover { background: #c7d2fe; }
+
+    .rank-table-container {
+      overflow-x: auto; margin-top: 1rem; border-radius: 0.6rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .rank-table-container table { min-width: 900px; }
+
+    @media (max-width: 768px) {
+      .score-container label { width: 26px; height: 26px; font-size: 0.65rem; }
+      .card { padding: 0.8rem; }
+      th, td { font-size: 0.68rem; padding: 0.25rem; }
+      .grid-cols-3 { grid-template-columns: 1fr; }
+      .gradient-btn { font-size: 0.75rem; padding: 0.35rem 0.9rem; }
+    }
+
+    /* چاپ: تمام جزئیات، حرفه‌ای، جدولی */
+    @media print {
+      @page { margin: 0.5cm; size: A4 landscape; }
+      body { background: white; color: black; margin: 0; padding: 0; font-size: 5.5pt; }
+      .container, .card, .no-print, .gradient-btn, #toggleDarkMode, .preset-btns, .rank-table-container { display: none !important; }
+      
+      .print-container { display: block !important; width: 100%; margin: 0; padding: 0; }
+      .print-table { width: 100%; border-collapse: collapse; font-size: 5.5pt; }
+      .print-table th, .print-table td { border: 0.5pt solid #000; padding: 0.04cm; text-align: center; vertical-align: middle; word-wrap: break-word; }
+      .print-table th { background: #f0f0f0; font-weight: bold; }
+      .print-header { text-align: center; font-size: 9pt; font-weight: bold; margin-bottom: 0.2cm; }
+      .print-footer { text-align: center; font-size: 5.5pt; margin-top: 0.2cm; }
+      .print-logo { display: block; margin: 0 auto 0.1cm; max-width: 45px; }
+      .signature-print { height: 40px; border-bottom: 1pt solid #000; margin: 0.05cm 0; }
+      .print-section { page-break-after: always; }
+      .print-section:last-child { page-break-after: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <img src="https://via.placeholder.com/100x100/10b981/ffffff?text=لوگو" class="print-logo" style="display:none;" alt="لوگو">
+
+  <!-- چاپ: تمام جزئیات -->
+  <div class="print-container" style="display:none;">
+    <div id="print_content"></div>
+    <div class="print-footer">سازنده: حسین هادی پور – آموزش و پرورش ناحیه ۳ شیراز © ۱۴۰۴</div>
+  </div>
+
+  <div class="header">سامانه ارزیابی هوشمند مدیران – آموزش و پرورش ناحیه ۳ شیراز</div>
+
+  <div class="container">
+
+    <!-- Dark Mode & Search -->
+    <div class="card no-print">
+      <div class="flex justify-between items-center mb-2">
+        <button id="toggleDarkMode" class="gradient-btn">حالت تاریک</button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-2 mb-2">
+        <input id="search_form" type="text" placeholder="جستجو مدیر یا تاریخ">
+        <select id="load_form_select"><option value="">-- انتخاب فرم --</option></select>
+        <button onclick="loadForm()" class="gradient-btn">بارگذاری</button>
+      </div>
+
+      <div class="rank-table-container">
+        <table id="saved_forms_table">
+          <thead>
+            <tr>
+              <th>رتبه</th><th>کد</th><th>نام مدیر</th><th>مدرسه</th><th>معدل</th>
+              <th>تاریخ</th><th>ناحیه</th><th>نوع</th><th>دوره</th><th>جنسیت</th><th>عملیات</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- تحلیل هوشمند -->
+    <div class="card no-print">
+      <h2 class="text-base font-bold text-center mb-2" style="color: var(--primary-dark);">تحلیل هوشمند عملکرد</h2>
+      <canvas id="scoreChart" height="260"></canvas>
+      <div id="smart_analysis" class="analysis-card mt-2"></div>
+    </div>
+
+    <!-- مشخصات عمومی -->
+    <div class="card">
+      <h2 class="text-base font-bold mb-2" style="color: var(--primary-dark);">مشخصات عمومی</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
+        <div><label>کد پرسنلی</label><input id="personnel_code" required></div>
+        <div><label>نام مدیر</label><input id="manager_name" required></div>
+        <div><label>جنسیت</label>
+          <select id="gender"><option value="دخترانه">دخترانه</option><option value="پسرانه">پسرانه</option></select>
+        </div>
+        <div><label>نام مدرسه</label><input id="school_name" required></div>
+        <div><label>دوره</label>
+          <select id="grade_level">
+            <option value="ابتدایی">ابتدایی</option>
+            <option value="دوره اول">دوره اول</option>
+            <option value="دوره دوم">دوره دوم</option>
+          </select>
+        </div>
+        <div><label>نوع</label>
+          <select id="school_type"><option value="دولتی">دولتی</option><option value="غیردولتی">غیردولتی</option></select>
+        </div>
+        <div><label>شیفت</label>
+          <select id="shift"><option value="نوبت اول">نوبت اول</option><option value="نوبت دوم">نوبت دوم</option><option value="ثابت صبح">ثابت صبح</option></select>
+        </div>
+        <div><label>تعداد دانش‌آموز</label><input id="student_count" type="number" min="1"></div>
+        <div><label>ناحیه</label><input id="region" value="ناحیه سه شیراز" readonly></div>
+        <div><label>تاریخ (میلادی)</label><input id="visit_date" type="date" required></div>
+        <div><label>تاریخ (شمسی)</label><input id="persian_date" readonly></div>
+        <div><label>ارزیاب</label><input id="evaluator_name" required></div>
+      </div>
+    </div>
+
+    <!-- پر کردن سریع -->
+    <div class="card no-print">
+      <h2 class="text-base font-bold mb-2" style="color: var(--primary-dark);">پر کردن سریع (با توضیح)</h2>
+      <div class="preset-btns">
+        <button onclick="fillAll(1)">همه ۱</button>
+        <button onclick="fillAll(3)">همه ۳</button>
+        <button onclick="fillAll(5)">همه ۵</button>
+        <button onclick="fillAll(7)">همه ۷</button>
+        <button onclick="fillAll(9)">همه ۹</button>
+        <button onclick="fillAll(10)">همه ۱۰</button>
+      </div>
+    </div>
+
+    <!-- ۶۹ معیار -->
+    <div class="card">
+      <h2 class="text-base font-bold mb-2" style="color: var(--primary-dark);">محور ۱: رهبری (۱۲)</h2>
+      <table><tbody id="axis_lead"></tbody></table>
+      <p class="average mt-1 text-right">میانگین: <span id="avg_lead">0.0</span></p>
+    </div>
+
+    <div class="card">
+      <h2 class="text-base font-bold mb-2" style="color: var(--primary-dark);">محور ۲: راهبری (۱۲)</h2>
+      <table><tbody id="axis_strat"></tbody></table>
+      <p class="average mt-1 text-right">میانگین: <span id="avg_strat">0.0</span></p>
+    </div>
+
+    <div class="card">
+      <h2 class="text-base font-bold mb-2" style="color: var(--primary-dark);">محور ۳: آموزشی (۱۲)</h2>
+      <table><tbody id="axis_edu"></tbody></table>
+      <p class="average mt-1 text-right">میانگین: <span id="avg_edu">0.0</span></p>
+    </div>
+
+    <div class="card">
+      <h2 class="text-base font-bold mb-2" style="color: var(--primary-dark);">محور ۴: محیط (۱۱)</h2>
+      <table><tbody id="axis_env"></tbody></table>
+      <p class="average mt-1 text-right">میانگین: <span id="avg_env">0.0</span></p>
+    </div>
+
+    <div class="card">
+      <h2 class="text-base font-bold mb-2" style="color: var(--primary-dark);">محور ۵: اجتماعی (۱۱)</h2>
+      <table><tbody id="axis_soc"></tbody></table>
+      <p class="average mt-1 text-right">میانگین: <span id="avg_soc">0.0</span></p>
+    </div>
+
+    <div class="card">
+      <h2 class="text-base font-bold mb-2" style="color: var(--primary-dark);">محور ۶: عملکردی (۱۱)</h2>
+      <table><tbody id="axis_perf"></tbody></table>
+      <p class="average mt-1 text-right">میانگین: <span id="avg_perf">0.0</span></p>
+    </div>
+
+    <!-- جمع‌بندی -->
+    <div class="card">
+      <h2 class="text-base font-bold mb-2" style="color: var(--primary-dark);">جمع‌بندی و امضا</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
+        <div><label>نکات قوت</label><textarea id="strengths" rows="2"></textarea></div>
+        <div><label>نکات قابل بهبود</label><textarea id="improvements" rows="2"></textarea></div>
+      </div>
+      <div><label>جمع‌بندی نهایی</label><textarea id="final_summary" rows="3"></textarea></div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+        <div>
+          <label>امضای ارزیاب</label>
+          <div class="sig-container"><canvas id="evaluator_sig" class="signature-pad"></canvas></div>
+          <button onclick="clearSig('evaluator_sig')" class="gradient-btn mt-1 text-xs">پاک کردن</button>
+        </div>
+        <div>
+          <label>امضای مدیر</label>
+          <div class="sig-container"><canvas id="manager_sig" class="signature-pad"></canvas></div>
+          <button onclick="clearSig('manager_sig')" class="gradient-btn mt-1 text-xs">پاک کردن</button>
+        </div>
+      </div>
+    </div>
+
+    <p class="average text-center text-lg mt-3">معدل کل: <span id="overall_avg">0.0</span> / ۱۰</p>
+
+    <!-- دکمه‌ها -->
+    <div class="flex flex-wrap justify-center gap-2 mt-4 no-print">
+      <button onclick="saveForm()" class="gradient-btn">ذخیره</button>
+      <button onclick="printForm()" class="gradient-btn">چاپ</button>
+      <button onclick="exportToExcel()" class="gradient-btn">اکسل</button>
+      <button onclick="exportJSON()" class="gradient-btn">JSON</button>
+      <button onclick="importJSON()" class="gradient-btn">وارد JSON</button>
+      <button onclick="clearForm()" class="gradient-btn">پاک</button>
+      <button onclick="clearAllData()" class="gradient-btn">همه پاک</button>
+    </div>
+  </div>
+
+  <div class="footer">سازنده: حسین هادی پور – آموزش و پرورش ناحیه ۳ شیراز © ۱۴۰۴</div>
+
+  <input type="file" id="jsonInput" accept=".json" style="display:none;">
+
+  <script>
+    const STORAGE_KEY = 'manager_eval_nahiye3_v2';
+    let evaluatorPad, managerPad, chart;
+
+    const items = [
+      // رهبری (12)
+      "تعیین چشم‌انداز روشن", "ایجاد حس مسئولیت‌پذیری", "تصمیم‌گیری مبتنی بر داده", "مدیریت بحران", "الهام‌بخشی به تیم", "توسعه فرهنگ سازمانی", 
+      "تشویق نوآوری", "حمایت از رشد حرفه‌ای", "ارتباط مؤثر", "مدیریت زمان", "حل تعارض", "رهبری تحول‌آفرین",
+
+      // راهبری (12)
+      "تدوین برنامه عملیاتی", "پیاده‌سازی طرح بوم", "مدیریت مالی شفاف", "استفاده از فناوری", "ارزیابی عملکرد معلمان", "مدیریت منابع انسانی", 
+      "برنامه‌ریزی درسی", "نظارت بر اجرای برنامه", "هماهنگی با اولیا", "مدیریت جلسات", "پیگیری اهداف", "گزارش‌دهی دوره‌ای",
+
+      // آموزشی (12)
+      "تنوع در روش‌های تدریس", "استفاده از ابزارهای کمک‌آموزشی", "ارزیابی مستمر دانش‌آموزان", "حمایت از دانش‌آموزان ضعیف", 
+      "تشویق فعالیت‌های فوق‌برنامه", "آموزش مهارت‌های زندگی", "استفاده از بازی در آموزش", "آموزش تفکر انتقادی", 
+      "آموزش خلاقیت", "آموزش کار گروهی", "آموزش مسئولیت‌پذیری", "آموزش حل مسئله",
+
+      // محیط (11)
+      "شاداب‌سازی فضای مدرسه", "توسعه فضای سبز", "بهداشت و ایمنی", "تجهیزات کمک‌آموزشی", "فناوری در کلاس", 
+      "کتابخانه فعال", "آزمایشگاه مجهز", "سالن چندمنظوره", "فضای ورزشی", "تابلوهای آموزشی", "نظافت و زیبایی",
+
+      // اجتماعی (11)
+      "ارتباط با اولیا", "جذب مشارکت خانواده", "برگزاری جلسات اولیا", "فعالیت‌های فرهنگی", "فعالیت‌های ورزشی", 
+      "فعالیت‌های هنری", "فعالیت‌های علمی", "فعالیت‌های دینی", "فعالیت‌های اجتماعی", "فعالیت‌های محیط‌زیستی", "ارتباط با جامعه محلی",
+
+      // عملکردی (11)
+      "نرخ حضور دانش‌آموزان", "میزان پیشرفت تحصیلی", "رضایت اولیا", "رضایت معلمان", "رضایت دانش‌آموزان", 
+      "جوایز و افتخارات", "مشارکت در مسابقات", "پروژه‌های موفق", "نوآوری‌های اجرایی", "تأثیر بر محله", "توسعه پایدار"
+    ];
+
+    const axes = {
+      lead: { name: "رهبری", items: items.slice(0, 12), ids: [] },
+      strat: { name: "راهبری", items: items.slice(12, 24), ids: [] },
+      edu: { name: "آموزشی", items: items.slice(24, 36), ids: [] },
+      env: { name: "محیط", items: items.slice(36, 47), ids: [] },
+      soc: { name: "اجتماعی", items: items.slice(47, 58), ids: [] },
+      perf: { name: "عملکردی", items: items.slice(58, 69), ids: [] }
+    };
+
+    const presetTexts = {
+      1: "کاملاً نامناسب", 3: "نیاز به بهبود جدی", 5: "متوسط", 7: "خوب", 9: "عالی", 10: "فوق‌العاده"
+    };
+
+    window.onload = () => {
+      document.getElementById('visit_date').addEventListener('change', updatePersianDate);
+
+      const evaluatorCanvas = document.getElementById('evaluator_sig');
+      const managerCanvas = document.getElementById('manager_sig');
+      evaluatorPad = new SignaturePad(evaluatorCanvas, { penColor: 'black' });
+      managerPad = new SignaturePad(managerCanvas, { penColor: 'black' });
+
+      setupSignaturePad(evaluatorCanvas, evaluatorPad);
+      setupSignaturePad(managerCanvas, managerPad);
+
+      generateItems();
+      loadSavedForms();
+      calculateAll();
+      updateChart();
+      updateSmartAnalysis();
+
+      document.querySelectorAll('input, textarea, select').forEach(el => {
+        el.addEventListener('input', () => { autoSave(); calculateAll(); updateChart(); updateSmartAnalysis(); });
+      });
+
+      document.getElementById('toggleDarkMode').onclick = () => {
+        document.body.classList.toggle('dark-mode');
+      };
+    };
+
+    function setupSignaturePad(canvas, pad) {
+      const container = canvas.parentElement;
+      const resize = () => {
+        const ratio = Math.max(window.devicePixelRatio || 1, 1);
+        canvas.width = container.offsetWidth * ratio;
+        canvas.height = container.offsetHeight * ratio;
+        canvas.getContext('2d').scale(ratio, ratio);
+        pad.clear();
+      };
+      resize();
+      new ResizeObserver(resize).observe(container);
+    }
+
+    function updatePersianDate() {
+      const d = document.getElementById('visit_date').value;
+      if (d) document.getElementById('persian_date').value = moment(d).locale('fa').format('YYYY/MM/DD');
+    }
+
+    function generateItems() {
+      let idx = 0;
+      Object.keys(axes).forEach(key => {
+        axes[key].items.forEach(title => {
+          const id = `item_${++idx}`;
+          axes[key].ids.push(id);
+
+          const row = `<tr>
+            <td>${title}</td>
+            <td><textarea rows="1" id="desc_${id}"></textarea></td>
+            <td colspan="2" class="score-container">
+              ${[1,2,3,4,5].map(n => `<input type="radio" name="${id}" value="${n}" id="${id}_${n}"><label for="${id}_${n}">${n}</label>`).join('')}
+            </td>
+            <td colspan="2" class="score-container">
+              ${[6,7,8,9,10].map(n => `<input type="radio" name="${id}" value="${n}" id="${id}_${n}"><label for="${id}_${n}">${n}</label>`).join('')}
+            </td>
+          </tr>`;
+          document.getElementById(`axis_${key}`).innerHTML += row;
+        });
+      });
+    }
+
+    function fillAll(score) {
+      const text = presetTexts[score] || "";
+      document.querySelectorAll('tr').forEach(tr => {
+        const radio = tr.querySelector(`input[value="${score}"]`);
+        const textarea = tr.querySelector('textarea');
+        if (radio && textarea) {
+          radio.checked = true;
+          textarea.value = text;
+        }
+      });
+      calculateAll(); updateChart(); updateSmartAnalysis(); autoSave();
+    }
+
+    function clearScores() {
+      document.querySelectorAll('input[type="radio"]').forEach(r => r.checked = false);
+      document.querySelectorAll('textarea[id^="desc_"]').forEach(t => t.value = '');
+    }
+
+    function calculateAll() {
+      let total = 0, filled = 0;
+      Object.keys(axes).forEach(key => {
+        let sum = 0, cnt = 0;
+        axes[key].ids.forEach(id => {
+          const sel = document.querySelector(`input[name="${id}"]:checked`);
+          if (sel) { sum += parseInt(sel.value); cnt++; }
+        });
+        const avg = cnt ? (sum / cnt).toFixed(1) : '0.0';
+        document.getElementById(`avg_${key}`).textContent = avg;
+        total += sum; filled += cnt;
+      });
+      const overall = filled ? (total / filled).toFixed(1) : '0.0';
+      document.getElementById('overall_avg').textContent = overall;
+    }
+
+    function updateChart() {
+      const ctx = document.getElementById('scoreChart').getContext('2d');
+      if (chart) chart.destroy();
+      chart = new Chart(ctx, {
+        type: 'radar',
+        data: {
+          labels: Object.values(axes).map(a => a.name),
+          datasets: [{
+            label: 'امتیاز',
+            data: Object.keys(axes).map(k => parseFloat(document.getElementById(`avg_${k}`).textContent) || 0),
+            backgroundColor: 'rgba(16, 185, 129, 0.2)',
+            borderColor: '#10b981',
+            borderWidth: 2
+          }]
+        },
+        options: { scales: { r: { min: 0, max: 10, ticks: { stepSize: 2 } } }, plugins: { legend: { display: false } } }
+      });
+    }
+
+    function updateSmartAnalysis() {
+      const overall = parseFloat(document.getElementById('overall_avg').textContent);
+      let analysis = "";
+      if (overall >= 9.5) analysis = "عالی! عملکرد در سطح برتر";
+      else if (overall >= 8.5) analysis = "خیلی خوب! با کمی تلاش به عالی می‌رسد";
+      else if (overall >= 7.0) analysis = "خوب! نیاز به تقویت در برخی محورها";
+      else if (overall >= 5.0) analysis = "متوسط! نیاز به برنامه بهبود";
+      else analysis = "نیاز به بازنگری اساسی";
+
+      const weak = Object.keys(axes).filter(k => parseFloat(document.getElementById(`avg_${k}`).textContent) < 7);
+      if (weak.length > 0) {
+        analysis += `<br><strong>محورهای ضعیف:</strong> ${weak.map(k => axes[k].name).join(', ')}`;
+      }
+
+      document.getElementById('smart_analysis').innerHTML = analysis;
+    }
+
+    function autoSave() { setTimeout(saveForm, 800); }
+
+    function saveForm() {
+      const code = document.getElementById('personnel_code').value.trim();
+      const name = document.getElementById('manager_name').value.trim();
+      if (!code || !name) return;
+
+      const key = `${STORAGE_KEY}_${code}`;
+      const formData = { ...getFormData(), timestamp: new Date().toISOString() };
+      localStorage.setItem(key, JSON.stringify(formData));
+      loadSavedForms();
+    }
+
+    function getFormData() {
+      const data = {
+        personnel_code: document.getElementById('personnel_code').value,
+        manager_name: document.getElementById('manager_name').value,
+        gender: document.getElementById('gender').value,
+        school_name: document.getElementById('school_name').value,
+        grade_level: document.getElementById('grade_level').value,
+        school_type: document.getElementById('school_type').value,
+        shift: document.getElementById('shift').value,
+        student_count: document.getElementById('student_count').value,
+        region: document.getElementById('region').value,
+        visit_date: document.getElementById('visit_date').value,
+        persian_date: document.getElementById('persian_date').value,
+        evaluator_name: document.getElementById('evaluator_name').value,
+        strengths: document.getElementById('strengths').value,
+        improvements: document.getElementById('improvements').value,
+        final_summary: document.getElementById('final_summary').value,
+        evaluator_sig: evaluatorPad.toDataURL(),
+        manager_sig: managerPad.toDataURL(),
+        scores: {},
+        descriptions: {},
+        averages: {}
+      };
+
+      document.querySelectorAll('input[type="radio"]:checked').forEach(r => {
+        data.scores[r.name] = r.value;
+      });
+
+      document.querySelectorAll('textarea[id^="desc_"]').forEach(t => {
+        data.descriptions[t.id.replace('desc_', '')] = t.value;
+      });
+
+      Object.keys(axes).forEach(k => {
+        data.averages[k] = document.getElementById(`avg_${k}`).textContent;
+      });
+      data.overall = document.getElementById('overall_avg').textContent;
+
+      return data;
+    }
+
+    function loadSavedForms() {
+      const tbody = document.querySelector('#saved_forms_table tbody');
+      tbody.innerHTML = '';
+      const select = document.getElementById('load_form_select');
+      select.innerHTML = '<option value="">-- انتخاب فرم --</option>';
+
+      const entries = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith(STORAGE_KEY)) {
+          const data = JSON.parse(localStorage.getItem(key));
+          entries.push({ key, data });
+        }
+      }
+
+      entries.sort((a, b) => parseFloat(b.data.overall) - parseFloat(a.data.overall));
+
+      entries.forEach((entry, index) => {
+        const { key, data } = entry;
+        const rank = index + 1;
+        const row = `<tr>
+          <td><strong>${rank}</strong></td>
+          <td>${data.personnel_code}</td>
+          <td>${data.manager_name}</td>
+          <td>${data.school_name}</td>
+          <td><strong>${data.overall}</strong></td>
+          <td>${data.persian_date}</td>
+          <td>${data.region}</td>
+          <td>${data.school_type}</td>
+          <td>${data.grade_level}</td>
+          <td>${data.gender}</td>
+          <td>
+            <button onclick="loadFormByKey('${key}')" class="text-blue-600 text-xs">بارگذاری</button>
+            <button onclick="deleteForm('${key}')" class="text-red-600 text-xs">حذف</button>
+          </td>
+        </tr>`;
+        tbody.innerHTML += row;
+
+        const opt = document.createElement('option');
+        opt.value = key; opt.textContent = `${data.manager_name} - ${data.overall} - ${data.persian_date}`;
+        select.appendChild(opt);
+      });
+    }
+
+    function loadFormByKey(key) {
+      clearScores();
+      const data = JSON.parse(localStorage.getItem(key));
+      if (!data) return;
+
+      Object.keys(data).forEach(k => {
+        const el = document.getElementById(k);
+        if (el) el.value = data[k] || '';
+      });
+
+      if (data.evaluator_sig) evaluatorPad.fromDataURL(data.evaluator_sig);
+      if (data.manager_sig) managerPad.fromDataURL(data.manager_sig);
+
+      Object.keys(data.scores || {}).forEach(name => {
+        const radio = document.querySelector(`input[name="${name}"][value="${data.scores[name]}"]`);
+        if (radio) radio.checked = true;
+      });
+
+      Object.keys(data.descriptions || {}).forEach(id => {
+        const textarea = document.getElementById(`desc_${id}`);
+        if (textarea) textarea.value = data.descriptions[id];
+      });
+
+      calculateAll(); updateChart(); updateSmartAnalysis();
+    }
+
+    function deleteForm(key) {
+      if (confirm('حذف شود؟')) {
+        localStorage.removeItem(key);
+        loadSavedForms();
+      }
+    }
+
+    function printForm() {
+      const printContent = document.getElementById('print_content');
+      printContent.innerHTML = '';
+
+      const entries = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith(STORAGE_KEY)) {
+          entries.push(JSON.parse(localStorage.getItem(key)));
+        }
+      }
+      entries.sort((a, b) => parseFloat(b.overall) - parseFloat(a.overall));
+
+      entries.forEach((d, idx) => {
+        const section = document.createElement('div');
+        section.className = 'print-section';
+        section.innerHTML = `
+          <div class="print-header">فرم ارزیابی مدیر - ${d.manager_name} - ${d.school_name}</div>
+          <table class="print-table">
+            <tr><th colspan="4">مشخصات عمومی</th></tr>
+            <tr><td>کد: ${d.personnel_code}</td><td>نام: ${d.manager_name}</td><td>مدرسه: ${d.school_name}</td><td>تاریخ: ${d.persian_date}</td></tr>
+            <tr><td>جنسیت: ${d.gender}</td><td>دوره: ${d.grade_level}</td><td>نوع: ${d.school_type}</td><td>شیفت: ${d.shift}</td></tr>
+            <tr><td colspan="2">تعداد دانش‌آموز: ${d.student_count}</td><td colspan="2">ارزیاب: ${d.evaluator_name}</td></tr>
+            <tr><th colspan="4">نتایج ارزیابی</th></tr>
+            <tr><td>رهبری: ${d.averages.lead}</td><td>راهبری: ${d.averages.strat}</td><td>آموزشی: ${d.averages.edu}</td><td>محیط: ${d.averages.env}</td></tr>
+            <tr><td>اجتماعی: ${d.averages.soc}</td><td>عملکردی: ${d.averages.perf}</td><td colspan="2"><strong>معدل کل: ${d.overall}</strong></td></tr>
+            <tr><th>معیار</th><th>توضیح</th><th>امتیاز</th><th>معیار</th></tr>
+        `;
+
+        let tableHTML = '';
+        for (let i = 0; i < items.length; i += 2) {
+          const id1 = `item_${i+1}`, id2 = `item_${i+2}`;
+          const score1 = d.scores[id1] || '-', desc1 = d.descriptions[id1] || '';
+          const score2 = id2 in d.scores ? d.scores[id2] : '-', desc2 = id2 in d.descriptions ? d.descriptions[id2] : '';
+          tableHTML += `<tr>
+            <td>${items[i]}</td><td>${desc1}</td><td>${score1}</td>
+            <td>${i+1 < items.length ? items[i+1] : ''}</td>
+          </tr>`;
+        }
+        section.innerHTML += tableHTML + `
+          <tr><th colspan="4">جمع‌بندی</th></tr>
+          <tr><td colspan="2">نکات قوت: ${d.strengths}</td><td colspan="2">نکات قابل بهبود: ${d.improvements}</td></tr>
+          <tr><td colspan="4">جمع‌بندی نهایی: ${d.final_summary}</td></tr>
+          <tr><td colspan="2">امضای ارزیاب:<div class="signature-print" style="background:url(${d.evaluator_sig}) no-repeat center/contain;"></div></td>
+              <td colspan="2">امضای مدیر:<div class="signature-print" style="background:url(${d.manager_sig}) no-repeat center/contain;"></div></td></tr>
+        </table>`;
+        printContent.appendChild(section);
+      });
+
+      window.print();
+    }
+
+    function exportToExcel() {
+      const headers = ["کد", "نام", "مدرسه", "تاریخ", "جنسیت", "دوره", "نوع", "شیفت", "دانش‌آموز", "ارزیاب"];
+      const scoreHeaders = [];
+      items.forEach((title, i) => {
+        scoreHeaders.push(`${title} - امتیاز`, `${title} - توضیح`);
+      });
+      const avgHeaders = ["رهبری", "راهبری", "آموزشی", "محیط", "اجتماعی", "عملکردی", "معدل", "قوت", "بهبود", "جمع‌بندی"];
+      const data = [headers.concat(scoreHeaders).concat(avgHeaders)];
+
+      const entries = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith(STORAGE_KEY)) {
+          entries.push(JSON.parse(localStorage.getItem(key)));
+        }
+      }
+      entries.sort((a, b) => parseFloat(b.overall) - parseFloat(a.overall));
+
+      entries.forEach(d => {
+        const row = [
+          d.personnel_code, d.manager_name, d.school_name, d.persian_date, d.gender,
+          d.grade_level, d.school_type, d.shift, d.student_count, d.evaluator_name
+        ];
+        items.forEach((_, i) => {
+          const id = `item_${i+1}`;
+          row.push(d.scores[id] || "", d.descriptions[id] || "");
+        });
+        row.push(
+          d.averages.lead, d.averages.strat, d.averages.edu,
+          d.averages.env, d.averages.soc, d.averages.perf,
+          d.overall, d.strengths, d.improvements, d.final_summary
+        );
+        data.push(row);
+      });
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet(data);
+      XLSX.utils.book_append_sheet(wb, ws, "ارزیابی کامل");
+      XLSX.writeFile(wb, "ارزیابی_کامل_جزئیات.xlsx");
+    }
+
+    function exportJSON() {
+      const data = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith(STORAGE_KEY)) {
+          data[key] = JSON.parse(localStorage.getItem(key));
+        }
+      }
+      const json = JSON.stringify(data, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'backup_eval_full.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function importJSON() {
+      document.getElementById('jsonInput').click();
+      document.getElementById('jsonInput').onchange = e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = ev => {
+          try {
+            const obj = JSON.parse(ev.target.result);
+            Object.keys(obj).forEach(k => localStorage.setItem(k, JSON.stringify(obj[k])));
+            loadSavedForms();
+            alert('داده‌ها با موفقیت وارد شدند');
+          } catch { alert('فایل نامعتبر'); }
+        };
+        reader.readAsText(file);
+      };
+    }
+
+    function clearSig(id) {
+      id === 'evaluator_sig' ? evaluatorPad.clear() : managerPad.clear();
+    }
+
+    function clearForm() {
+      if (confirm('همه پاک شود؟')) {
+        document.querySelectorAll('input, textarea, select').forEach(el => el.value = '');
+        evaluatorPad.clear(); managerPad.clear();
+        clearScores();
+        calculateAll(); updateChart(); updateSmartAnalysis();
+      }
+    }
+
+    function clearAllData() {
+      if (confirm('همه پاک شوند؟')) {
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+          const key = localStorage.key(i);
+          if (key.startsWith(STORAGE_KEY)) localStorage.removeItem(key);
+        }
+        loadSavedForms();
+      }
+    }
+  </script>
+</body>
+</html>
